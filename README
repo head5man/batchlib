@@ -1,0 +1,32 @@
+# batchlib
+
+batchlib is an effort to introduce batch script commands as a reusable library.
+This is also my first crack at publishing @github.
+
+Initial focus is to provide remote commands run on SERVER and DEVICE to accomplish remote build and deployment.
+
+## Installation
+
+Copy commands-file to your main batch file location.
+
+Copy and rename _user_config.bat.template to %userprofile%\Documents\configs\%APP%_user_config.bat to configure tools, SERVER and DEVICE. 
+
+
+
+## Usage
+
+```batch
+:: Set environment you can provide your own in %1.
+:: Otherwise %userprofile%\Documents\configs\%APP%_user_config.bat is used
+call commands set_env
+:: Just printing setup
+call commands print_env
+:: run echo command @DEVICE
+call commands exec_cmd_target "echo You should see me. Provided the proper DEVICE configuration"
+```
+
+## Contributing
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+## License
+[MIT](https://choosealicense.com/licenses/mit/)
