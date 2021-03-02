@@ -5,8 +5,13 @@
 ::: Reusable commands file
 ::: usage call commands funclabel ...
 :::
+::: requires configuration for SERVER and DEVICE
+::: for template see:  
+::: https://github.com/head5man/batchlib/blob/main/_user_config.bat.template
+:::
 ::: Thanks to Mika Rajala for the base of the scripts
 ::: and spark to modularize batch scripting
+::
 ::
 :: ********************************************************
 
