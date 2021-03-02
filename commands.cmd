@@ -16,7 +16,7 @@
 :: thanks to dbenham@dostips.com
 :: https://www.dostips.com/forum/viewtopic.php?t=1626
 
-:: filename = commands
+:: filename = commands.cmd
 call :%*
 exit /b
 
