@@ -1,0 +1,16 @@
+:: override defaults if needed
+:: configure SERVER and DEVICE
+echo Loading user config ...
+
+set WINSCP="C:\Program Files (x86)\WinSCP\WinSCP.com"
+set putty="C:\Program Files\PuTTy\plink.exe"
+
+:: SERVER
+set SERVER_ADDR=
+set SERVER_LOGIN=
+set SERVER_PW=
+
+:: DEVICE
+set DEVICE_ADDR=
+set DEVICE_LOGIN=
+set DEVICE_PW=
