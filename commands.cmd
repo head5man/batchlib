@@ -10,7 +10,7 @@
 ::
 :: ********************************************************
 
-::@echo off
+@echo off
 
 :: proof of concept
 :: thanks to dbenham@dostips.com
@@ -34,6 +34,20 @@ exit /b
 ::: %1 user_config.bat override file tries (%userprofile%\documents\configs\%APP%_user_config.bat)
 :set_env
 	set arg1="%1"
+
+	if not exist %userprofile%\documents\logs mkdir %userprofile%\documents\logs
+	for /f "tokens=1" %%a in ('powershell -c "get-date -format yyyyMMdd"') do @set LOGDATE=%%a
+	set WINSCP_LOG=%userprofile%\Documents\logs\winscp%LOGDATE%.log
+	:: somehow best i could muster all empty checking if variants seem to fail
+	:: so comment out file creation or nul setting
+	
+	::: either log
+	::if not exist %WINSCP_LOG% echo %WINSCP_LOG% > %WINSCP_LOG%
+	::set WINSCP_REDIRECT=">> %WINSCP_LOG%"
+	::: or dont
+	set WINSCP_REDIRECT=">nul"
+	::: both are silent
+	
 	set WINSCP="C:\Program Files (x86)\WinSCP\WinSCP.com"
 	set putty="C:\Program Files\PuTTy\plink.exe"
 	
@@ -58,7 +72,7 @@ exit /b
 	echo read configuration
 	:: user_config overrides for tools
 	::: e.g. for tools relocation and hiding passwords
-	if not "%arg1%"=="" (
+	if not exist %arg1% (
 		echo defaults %userprofile%\documents\configs\%APP%_user_config.bat
 		if exist %userprofile%\documents\configs\%APP%_user_config.bat call %userprofile%\documents\configs\%APP%_user_config.bat
 	) else (
@@ -95,7 +109,7 @@ exit /b %ERRORLEVEL%
 ::: %1 remote plink profile
 ::: %2 command line to be executed
 :plink_exec_cmd_remote
-	echo %putty% %~1 %~2
+	::echo %putty% %~1 %~2
 	%putty% %~1 %~2
 	exit /b %ERRORLEVEL%
 
@@ -103,7 +117,8 @@ exit /b %ERRORLEVEL%
 :: Parameters
 ::: %1 command line to be executed
 :exec_cmd_server
-	call plink_exec_cmd_remote "%SERVER_PROFILE_PLINK% %PLINK_SERVER_FLAGS%" %1
+	set arg1=%1
+	call plink_exec_cmd_remote "%SERVER_PROFILE_PLINK% %PLINK_SERVER_FLAGS%" %arg1%
 	exit /b %ERRORLEVEL%
 
 :: Execute commands at DEVICE_PROFILE_PLINK
@@ -111,7 +126,7 @@ exit /b %ERRORLEVEL%
 ::: %1 command line to be executed	
 :exec_cmd_target
 	set arg1=%1
-	call :plink_exec_cmd_remote "%DEVICE_PROFILE_PLINK% %PLINK_SERVER_FLAGS%" %arg1%
+	call :plink_exec_cmd_remote "%DEVICE_PROFILE_PLINK% %PLINK_DEVICE_FLAGS%" %arg1%
 	exit /b %ERRORLEVEL%
 	
 :: Parameters
@@ -120,11 +135,12 @@ exit /b %ERRORLEVEL%
 ::: %3 = the remote target folder
 :scp_put_files
 	if not exist %2 goto src_transfer_error
-		echo *** upload to %~1 ...
-		%WINSCP% /command "open %~1" "put %~f2 %3" "exit"
+		echo *** uploading files %~1 ...
+		::echo "(%WINSCP% /command "open %~1" "put %~f2 %3" "exit") %WINSCP_REDIRECT:"=%"
+		(%WINSCP% /command "open %~1" "put %~f2 %3" "exit") %WINSCP_REDIRECT:"=%
 		exit /b %ERRORLEVEL%
 	:src_transfer_error
-	echo Source package %2 not found
+	echo *** error: Source package %2 not found
 	exit /b 1
 
 :: Parameters
@@ -132,9 +148,9 @@ exit /b %ERRORLEVEL%
 ::: %2 = the file(s) to be transferred
 ::: %3 = the local target folder
 :scp_get_files
-	echo *** download from %~1 ...
+	echo *** downloading files %~1 ...
 	::echo *** %WINSCP% /command "open %~1" "get %~2 %~f3" "exit"
-	%WINSCP% /command "open %~1" "get %~2 %~f3" "exit"
+	(%WINSCP% /command "open %~1" "get %~2 %~f3" "exit") %WINSCP_REDIRECT:"=%
 	exit /b %ERRORLEVEL%
 
 :: Parameter %1 = the folder to be created
