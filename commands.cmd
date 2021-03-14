@@ -46,12 +46,15 @@ exit /b
 	:: somehow best i could muster all empty checking if variants seem to fail
 	:: so comment out file creation or nul setting
 	
-	::: either log
+	::: redirect to log
 	::if not exist %WINSCP_LOG% echo %WINSCP_LOG% > %WINSCP_LOG%
 	::set WINSCP_REDIRECT=">> %WINSCP_LOG%"
-	::: or dont
-	set WINSCP_REDIRECT=">nul"
+	::: or nul
 	::: both are silent
+	set WINSCP_REDIRECT=">nul"
+	::: if not you get bable
+	::set WINSCP_REDIRECT=""
+	
 	
 	set WINSCP="C:\Program Files (x86)\WinSCP\WinSCP.com"
 	set putty="C:\Program Files\PuTTy\plink.exe"
@@ -61,8 +64,10 @@ exit /b
 	
 	set TORTOISEREV="C:\Program Files\TortoiseSVN\bin\SubWCRev.exe"
 
-	set PLINK_TARGET_FLAGS=-ssh -batch
+	set PLINK_DEVICE_FLAGS=-ssh
 	set PLINK_SERVER_FLAGS=-ssh -no-antispoof
+	set SCP_DEVICE_FLAGS=
+	set SCP_SERVER_FLAGS=
 	
 	:: the following variables needs to set 
 	:: here or in arg1/%APP%_user_config.bat
@@ -79,7 +84,7 @@ exit /b
 	::: e.g. for tools relocation and hiding passwords
 	if not exist %arg1% (
 		echo defaults %userprofile%\documents\configs\%APP%_user_config.bat
-		if exist %userprofile%\documents\configs\%APP%_user_config.bat call %userprofile%\documents\configs\%APP%_user_config.bat
+		if exist %userprofile%\documents\configs\%APP%_%APP_PROFILE%user_config.bat call %userprofile%\documents\configs\%APP%_%APP_PROFILE%user_config.bat
 	) else (
 		echo given argument %arg1%
 		if exist %arg1% call %arg1%
@@ -97,10 +102,10 @@ exit /b
 	)
 	
 	set SERVER_PROFILE_PLINK=%SERVER_ADDR% -l %SERVER_LOGIN% %SERVER_OPT_PW%
-	set SERVER_PROFILE_SCP=scp://%USERNAME%%SERVER_SCP_PW%@%SERVER_ADDR% -hostkey=%SERVER_HOSTKEY%
+	set SERVER_PROFILE_SCP=scp://%USERNAME%%SERVER_SCP_PW%@%SERVER_ADDR%/~ -hostkey=%SERVER_HOSTKEY% %SCP_SERVER_FLAGS%
 
 	set DEVICE_PROFILE_PLINK=%DEVICE_ADDR% -l %DEVICE_LOGIN% %DEVICE_OPT_PW%
-	set DEVICE_PROFILE_SCP=scp://%DEVICE_LOGIN%%DEVICE_SCP_PW%@%DEVICE_ADDR% -hostkey=%DEVICE_HOSTKEY%
+	set DEVICE_PROFILE_SCP=scp://%DEVICE_LOGIN%%DEVICE_SCP_PW%@%DEVICE_ADDR%/tmp -hostkey=%DEVICE_HOSTKEY% %SCP_DEVICE_FLAGS%
 	exit /b %ERRORLEVEL%
 
 :print_env
@@ -114,8 +119,11 @@ exit /b %ERRORLEVEL%
 ::: %1 remote plink profile
 ::: %2 command line to be executed
 :plink_exec_cmd_remote
-	::echo %putty% %~1 %~2
+	if "%~3"=="" (
 	%putty% %~1 %~2
+	) else (
+	echo y|%putty% %~1 %~2
+	)
 	exit /b %ERRORLEVEL%
 
 :: Execute commands at SERVER_PROFILE_PLINK
@@ -123,6 +131,7 @@ exit /b %ERRORLEVEL%
 ::: %1 command line to be executed
 :exec_cmd_server
 	set arg1=%1
+	echo %arg1%
 	call plink_exec_cmd_remote "%SERVER_PROFILE_PLINK% %PLINK_SERVER_FLAGS%" %arg1%
 	exit /b %ERRORLEVEL%
 
@@ -131,7 +140,8 @@ exit /b %ERRORLEVEL%
 ::: %1 command line to be executed	
 :exec_cmd_target
 	set arg1=%1
-	call :plink_exec_cmd_remote "%DEVICE_PROFILE_PLINK% %PLINK_DEVICE_FLAGS%" %arg1%
+	echo %arg1%
+	call :plink_exec_cmd_remote "%DEVICE_PROFILE_PLINK% %PLINK_DEVICE_FLAGS%" %arg1% %DEVICE_ECHO_Y%
 	exit /b %ERRORLEVEL%
 	
 :: Parameters
@@ -140,7 +150,7 @@ exit /b %ERRORLEVEL%
 ::: %3 = the remote target folder
 :scp_put_files
 	if not exist %2 goto src_transfer_error
-		echo *** uploading files %~1 ...
+		echo *** uploading files %~1 ... %2
 		::echo "(%WINSCP% /command "open %~1" "put %~f2 %3" "exit") %WINSCP_REDIRECT:"=%"
 		(%WINSCP% /command "open %~1" "put %~f2 %3" "exit") %WINSCP_REDIRECT:"=%
 		exit /b %ERRORLEVEL%
@@ -156,6 +166,42 @@ exit /b %ERRORLEVEL%
 	echo *** downloading files %~1 ...
 	::echo *** %WINSCP% /command "open %~1" "get %~2 %~f3" "exit"
 	(%WINSCP% /command "open %~1" "get %~2 %~f3" "exit") %WINSCP_REDIRECT:"=%
+	exit /b %ERRORLEVEL%
+
+:scp_put_device
+	if not exist %~1 goto src_transfer_error
+		echo *** uploading files %~1 ... %2
+		::echo "(%WINSCP% /command "open %~1" "put %~f2 %3" "exit") %WINSCP_REDIRECT:"=%"
+		(%WINSCP% /command "open %DEVICE_PROFILE_SCP%" "put %~f1 %2" "exit") %WINSCP_REDIRECT:"=%
+		exit /b %ERRORLEVEL%
+	:src_transfer_error
+	echo *** error: Source files %1 not found
+	exit /b 1
+
+:scp_put_server
+	if not exist %1 goto src_transfer_error
+		echo *** uploading files %~1 ...
+		::echo "(%WINSCP% /command "open %~1" "put %~f2 %3" "exit") %WINSCP_REDIRECT:"=%"
+		(%WINSCP% /command "open %SERVER_PROFILE_SCP%" "put %~f1 %2" "exit") %WINSCP_REDIRECT:"=%
+		exit /b %ERRORLEVEL%
+	:src_transfer_error
+	echo *** error: Source files %1 not found
+	exit /b 1
+
+:: Parameters
+::: %1 = the remote scp profile e.g. "scp://%DEVICE_LOGIN%:%DEVICE_PW%@%DEVICE_ADDR% -hostkey=*"
+::: %2 = the file(s) to be transferred
+::: %3 = the local target folder
+:scp_get_device
+	echo *** downloading files %~1 ...
+	::echo *** %WINSCP% /command "open %~1" "get %~2 %~f3" "exit"
+	(%WINSCP% /command "open %DEVICE_PROFILE_SCP%" "get %~1 %~f2" "exit") %WINSCP_REDIRECT:"=%
+	exit /b %ERRORLEVEL%
+
+:scp_get_server
+	echo *** downloading files %~1 ...
+	::echo *** %WINSCP% /command "open %~1" "get %~2 %~f3" "exit"
+	(%WINSCP% /command "open %SERVER_PROFILE_SCP%" "get %~1 %~f2" "exit") %WINSCP_REDIRECT:"=%
 	exit /b %ERRORLEVEL%
 
 :: Parameter %1 = the folder to be created
