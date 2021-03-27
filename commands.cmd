@@ -36,7 +36,7 @@ exit /b
 
 :: setup tools, addresses and passwords
 :: Parameters:
-::: %1 user_config.bat override file tries (%userprofile%\documents\configs\%APP%_user_config.bat)
+::: %1 definition file default:(%userprofile%\documents\configs\%APP%_%APP_PROFILE%_config.bat)
 :set_env
 	set arg1="%1"
 
@@ -64,7 +64,7 @@ exit /b
 	
 	set TORTOISEREV="C:\Program Files\TortoiseSVN\bin\SubWCRev.exe"
 
-	set PLINK_DEVICE_FLAGS=-ssh
+	set PLINK_DEVICE_FLAGS=-ssh -no-antispoof
 	set PLINK_SERVER_FLAGS=-ssh -no-antispoof
 	set SCP_DEVICE_FLAGS=
 	set SCP_SERVER_FLAGS=
@@ -82,12 +82,14 @@ exit /b
 	echo read configuration
 	:: user_config overrides for tools
 	::: e.g. for tools relocation and hiding passwords
+	if exist %userprofile%\documents\configs\%USERNAME%_config.bat call %userprofile%\documents\configs\%USERNAME%_config.bat 
+	
 	if not exist %arg1% (
-		echo defaults %userprofile%\documents\configs\%APP%_user_config.bat
-		if exist %userprofile%\documents\configs\%APP%_%APP_PROFILE%user_config.bat call %userprofile%\documents\configs\%APP%_%APP_PROFILE%user_config.bat
+		echo defaults %userprofile%\documents\configs\%APP%_%APP_PROFILE%_config.bat
+		if exist %userprofile%\documents\configs\%APP%_%APP_PROFILE%_config.bat call %userprofile%\documents\configs\%APP%_%APP_PROFILE%_config.bat
 	) else (
 		echo given argument %arg1%
-		if exist %arg1% call %arg1%
+		call %arg1%
 	)
 
 	if not "%DEVICE_PW%"=="" (
