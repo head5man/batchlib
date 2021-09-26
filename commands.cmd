@@ -70,10 +70,15 @@ exit /b
 	set DEVICE_LOGIN=
 	set SERVER_ADDR=
 	set DEVICE_ADDR=
-	echo read configuration
-	:: user_config overrides for tools
-	::: e.g. for tools relocation and hiding passwords
-	if exist %userprofile%\documents\configs\%USERNAME%_config.bat call %userprofile%\documents\configs\%USERNAME%_config.bat
+	echo ** read user config
+	if exist %userprofile%\documents\configs\%USERNAME%_config.bat (
+		echo from user
+		call %userprofile%\documents\configs\%USERNAME%_config.bat
+	) else (
+		echo from template
+		if exist .\_user_config.template.bat call .\_user_config.template.bat
+	)
+	
 	
 	echo ** check tool variables
 	call :check_variable "%TORTOISEPATH%" "tortoisepath empty"
@@ -86,7 +91,7 @@ exit /b
 	set SVNVERSION="%TORTOISEPATH:"=%\svnversion.exe"
 	set SVNEXE="%TORTOISEPATH:"=%\svn.exe"
 	
-	echo ** check app config
+	echo ** read app config
 	if not exist %arg1% (
 		echo check path %userprofile%\documents\configs\
 		if exist %userprofile%\documents\configs\ (
