@@ -4,6 +4,9 @@ echo Loading user config ...
 
 set WINSCP="C:\Program Files (x86)\WinSCP\WinSCP.com"
 set putty="C:\Program Files\PuTTy\plink.exe"
+set ZIPTOOL="C:\Program Files\7-Zip\7z.exe"
+set TARGZTOOL="C:\Program Files\7-Zip\7z.exe"
+set TORTOISEPATH="C:\Program Files\TortoiseSVN\bin"
 
 :: echo y for plink:
 :: undefined/empty - disabled

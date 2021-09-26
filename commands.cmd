@@ -54,15 +54,6 @@ exit /b
 	set WINSCP_REDIRECT=">nul"
 	::: if not you get bable
 	::set WINSCP_REDIRECT=""
-	
-	
-	set WINSCP="C:\Program Files (x86)\WinSCP\WinSCP.com"
-	set putty="C:\Program Files\PuTTy\plink.exe"
-	
-	set ZIPTOOL="C:\Program Files\7-Zip\7z.exe"
-	set TARGZTOOL="C:\Program Files\7-Zip\7z.exe"
-	
-	set TORTOISEREV="C:\Program Files\TortoiseSVN\bin\SubWCRev.exe"
 
 	set PLINK_DEVICE_FLAGS=-ssh -no-antispoof
 	set PLINK_SERVER_FLAGS=-ssh -no-antispoof
@@ -82,30 +73,48 @@ exit /b
 	echo read configuration
 	:: user_config overrides for tools
 	::: e.g. for tools relocation and hiding passwords
-	if exist %userprofile%\documents\configs\%USERNAME%_config.bat call %userprofile%\documents\configs\%USERNAME%_config.bat 
+	if exist %userprofile%\documents\configs\%USERNAME%_config.bat call %userprofile%\documents\configs\%USERNAME%_config.bat
 	
-	if not exist %arg1% (
-		echo defaults %userprofile%\documents\configs\%APP%_%APP_PROFILE%_config.bat
-		if exist %userprofile%\documents\configs\%APP%_%APP_PROFILE%_config.bat call %userprofile%\documents\configs\%APP%_%APP_PROFILE%_config.bat
-	) else (
-		echo given argument %arg1%
-		call %arg1%
-	)
+	echo ** check tool variables
+	call :check_variable "%TORTOISEPATH%" "tortoisepath empty"
+	call :check_variable "%WINSCP%" "winscp empty"
+	call :check_variable "%putty%" "puttytool empty"
+	call :check_variable "%ZIPTOOL%" "ziptool empty"
+	call :check_variable "%TARGZTOOL%" "targztool empty"
 
+	set TORTOISEREV="%TORTOISEPATH:"=%\SubWCRev.exe"
+	set SVNVERSION="%TORTOISEPATH:"=%\svnversion.exe"
+	set SVNEXE="%TORTOISEPATH:"=%\svn.exe"
+	
+	echo ** check app config
+	if not exist %arg1% (
+		echo check path %userprofile%\documents\configs\
+		if exist %userprofile%\documents\configs\ (
+		echo check file %APP%_%APP_PROFILE%_config.bat
+		if exist %userprofile%\documents\configs\%APP%_%APP_PROFILE%_config.bat (
+			echo read default %APP%_%APP_PROFILE%_config.bat *
+			call %userprofile%\documents\configs\%APP%_%APP_PROFILE%_config.bat
+		)
+	) else (
+		echo check file %arg1%
+		if exist %arg1%	call %arg1%
+	)
+	echo ** set passwords
 	if not "%DEVICE_PW%"=="" (
-		echo set device pw
+		echo device pw
 		set DEVICE_OPT_PW=-pw %DEVICE_PW%
 		set DEVICE_SCP_PW=:%DEVICE_PW%
 	)
 	if not "%SERVER_PW%"=="" (
-		echo set server pw
+		echo server pw
 		set SERVER_OPT_PW=-pw %SERVER_PW%
 		set SERVER_SCP_PW=:%SERVER_PW%
 	)
-	
+	echo ** set profiles
+	echo server
 	set SERVER_PROFILE_PLINK=%SERVER_ADDR% -l %SERVER_LOGIN% %SERVER_OPT_PW%
 	set SERVER_PROFILE_SCP=scp://%USERNAME%%SERVER_SCP_PW%@%SERVER_ADDR%/~ -hostkey=%SERVER_HOSTKEY% %SCP_SERVER_FLAGS%
-
+	echo device
 	set DEVICE_PROFILE_PLINK=%DEVICE_ADDR% -l %DEVICE_LOGIN% %DEVICE_OPT_PW%
 	set DEVICE_PROFILE_SCP=scp://%DEVICE_LOGIN%%DEVICE_SCP_PW%@%DEVICE_ADDR%/tmp -hostkey=%DEVICE_HOSTKEY% %SCP_DEVICE_FLAGS%
 	exit /b %ERRORLEVEL%
@@ -116,6 +125,28 @@ echo "*** SERVER_SCP   %SERVER_PROFILE_SCP%"
 echo "*** DEVICE_PLINK %DEVICE_PROFILE_PLINK%"
 echo "*** DEVICE_SCP   %DEVICE_PROFILE_SCP%"
 exit /b %ERRORLEVEL%
+
+:: parameters
+::: %1 variable
+::: %2 exit code
+::: %3 message
+:check_variable
+	set arg1=%1
+	set arg3=0
+	if not "%2"=="" set arg3=%2
+	set test=%arg1:"=%
+	if [%test%]==[] (
+		call :error_exit %2 %arg3%
+	)
+exit /b 0
+
+:: parameters
+::: %2 code
+::: %1 message
+:error_exit
+	echo %1
+exit /b %2
+	
 
 :: Parameters
 ::: %1 remote plink profile
