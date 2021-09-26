@@ -149,6 +149,64 @@ exit /b %2
 	
 
 :: Parameters
+::: %1 directory
+:svn_rev
+	echo test command %SVNVERSION% -c %1
+	%SVNVERSION% -c %1
+	if %ERRORLEVEL% neq 0 (
+		exit /b %ERRORLEVEL%
+	) else (
+		for /f "tokens=1,2 delims=:" %%a in ('%SVNVERSION% -c %1') do (
+			if not "%%b" == "" ( 
+				set SVNREV=%%b
+			) else (
+				set SVNREV=%%a
+			)
+		)
+	)
+exit /b 0
+
+:: Parameters
+::: %1 directory
+:svn_rev_template
+	set SVNREV=
+	call :svn_rev %1
+	if %ERRORLEVEL% neq 0 goto _wcrev
+	:: get rev from filled SVNREV
+	set REV=%SVNREV:M=%
+	
+	set MODIFIED=""
+	if not "%SVNREV%"=="%REV%" set MODIFIED="M"
+	echo ( %SVNREV% - %REV% - %MODIFIED% )
+	echo create svn revision c include
+	echo #define REVISION %REV% > rev.h
+	echo #define REVISION_STR "%SVNREV%" >> rev.h
+	echo #define REVISION_MOD %MODIFIED% >> rev.h
+	echo create svn revision sh include
+	echo _REVISION=%REV%> svnrev.tmp
+	echo _MODIFIED=%MODIFIED%>> svnrev.tmp
+	echo SVNREV="%SVNREV%">> svnrev.tmp
+	del rev-template.tmp
+	del svnrev-template.tmp
+	exit /b %ERRORLEVEL%
+:_wcrev
+	echo create svn revision c include
+	echo #define REVISION $WCREV$ > rev-template.tmp
+	echo #define REVISION_MOD "$WCMODS?M:$" >> rev-template.tmp
+	echo #define REVISION_STR "$WCREV$" REVISION_MOD >> rev-template.tmp
+	%TORTOISEREV% %1 rev-template.tmp rev.h
+
+	echo create svn revision sh include
+	echo _REVISION=$WCREV$> rev-template.tmp
+	echo _MODIFIED="$WCMODS?M:$">> rev-template.tmp
+	echo SVNREV="$_REVISION$_MODIFIED">> rev-template.tmp
+	
+	%TORTOISEREV% %1 rev-template.tmp svnrev.tmp
+	del rev-template.tmp
+	del svnrev-template.tmp
+	exit /b %ERRORLEVEL%
+
+:: Parameters
 ::: %1 remote plink profile
 ::: %2 command line to be executed
 :plink_exec_cmd_remote
