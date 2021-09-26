@@ -41,9 +41,9 @@ exit /b
 	set arg1="%1"
 
 	if not exist %userprofile%\documents\logs mkdir %userprofile%\documents\logs
-	for /f "tokens=1" %%a in ('powershell -c "get-date -format yyyyMMdd"') do @set LOGDATE=%%a
+	for /f "tokens=1" %%a in ('start /wait /b powershell -c "get-date -format yyyyMMdd"') do @set LOGDATE=%%a
 	set WINSCP_LOG=%userprofile%\Documents\logs\winscp%LOGDATE%.log
-	:: somehow best i could muster all empty checking if variants seem to fail
+	:: somehow best i could muster ... all empty checking variants seem to fail
 	:: so comment out file creation or nul setting
 	
 	::: redirect to log
@@ -134,7 +134,7 @@ exit /b %ERRORLEVEL%
 :exec_cmd_server
 	set arg1=%1
 	echo %arg1%
-	call plink_exec_cmd_remote "%SERVER_PROFILE_PLINK% %PLINK_SERVER_FLAGS%" %arg1%
+	call :plink_exec_cmd_remote "%SERVER_PROFILE_PLINK% %PLINK_SERVER_FLAGS%" %arg1%
 	exit /b %ERRORLEVEL%
 
 :: Execute commands at DEVICE_PROFILE_PLINK
@@ -214,7 +214,7 @@ exit /b %ERRORLEVEL%
 :: Parameter %1 = server profile for putty eg. "%DEVICE_ADDR% -l %DEVICE_LOGIN% -pw %DEVICE_PW%"
 :: Parameter %2 = remote folder to be created
 :mkdir_remote
-	call plink_cmd_remote %1 "mkdir -p %2"
+	call :plink_exec_cmd_remote %1 "mkdir -p %2"
 	exit /b %ERRORLEVEL%
 
 :: No parameters
