@@ -81,11 +81,11 @@ exit /b
 	
 	
 	echo ** check tool variables
-	call :check_variable "%TORTOISEPATH%" "tortoisepath empty"
-	call :check_variable "%WINSCP%" "winscp empty"
-	call :check_variable "%putty%" "puttytool empty"
-	call :check_variable "%ZIPTOOL%" "ziptool empty"
-	call :check_variable "%TARGZTOOL%" "targztool empty"
+	call :check_variable 0 "TORTOISEPATH empty" "%TORTOISEPATH%"
+	call :check_variable 0 "WINSCP empty" "%WINSCP%"
+	call :check_variable 0 "putty empty" "%putty%"
+	call :check_variable 0 "ZIPTOOL empty" "%ZIPTOOL%"
+	call :check_variable 0 "TARGZTOOL empty" "%TARGZTOOL%"
 
 	set TORTOISEREV="%TORTOISEPATH:"=%\SubWCRev.exe"
 	set SVNVERSION="%TORTOISEPATH:"=%\svnversion.exe"
@@ -95,10 +95,11 @@ exit /b
 	if not exist %arg1% (
 		echo check path %userprofile%\documents\configs\
 		if exist %userprofile%\documents\configs\ (
-		echo check file %APP%_%APP_PROFILE%_config.bat
-		if exist %userprofile%\documents\configs\%APP%_%APP_PROFILE%_config.bat (
-			echo read default %APP%_%APP_PROFILE%_config.bat *
-			call %userprofile%\documents\configs\%APP%_%APP_PROFILE%_config.bat
+			echo check file %APP%_%APP_PROFILE%_config.bat
+			if exist %userprofile%\documents\configs\%APP%_%APP_PROFILE%_config.bat (
+				echo read default %APP%_%APP_PROFILE%_config.bat *
+				call %userprofile%\documents\configs\%APP%_%APP_PROFILE%_config.bat
+			)
 		)
 	) else (
 		echo check file %arg1%
@@ -132,25 +133,24 @@ echo "*** DEVICE_SCP   %DEVICE_PROFILE_SCP%"
 exit /b %ERRORLEVEL%
 
 :: parameters
-::: %1 variable
-::: %2 exit code
-::: %3 message
+::: %1 exit code - mandatory
+::: %2 message - mandatory
+::: %3 variable
 :check_variable
-	set arg1=%1
-	set arg3=0
-	if not "%2"=="" set arg3=%2
-	set test=%arg1:"=%
+	set arg3=%3
+	set test=%arg3:"=%
 	if [%test%]==[] (
-		call :error_exit %2 %arg3%
+		call :error_exit %1 %2
 	)
 exit /b 0
 
 :: parameters
-::: %2 code
-::: %1 message
+::: %1 code
+::: %2 message
+
 :error_exit
-	echo %1
-exit /b %2
+	echo %2
+exit /b %1
 	
 
 :: Parameters
